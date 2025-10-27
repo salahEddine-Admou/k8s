@@ -1,0 +1,139 @@
+# ==============================================
+# KUBERNETES LEARNING: BACKEND DEPLOYMENT
+# File: backend-deployment.yaml
+# ==============================================
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: backend-deployment
+  namespace: travelmemory
+  labels:
+    app: travelmemory
+    component: backend
+
+spec:
+  replicas: 2  # Run 2 backend pods for high availability
+  
+  selector:
+    matchLabels:
+      app: travelmemory
+      component: backend
+  
+  template:
+    metadata:
+      labels:
+        app: travelmemory
+        component: backend
+    
+    spec:
+      containers:
+      - name: backend
+        # Use your built backend image
+        # Replace with actual registry/path
+        image: travelmemory-backend:latest
+        imagePullPolicy: IfNotPresent
+        
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        
+        # Environment variables from ConfigMap
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: NODE_ENV
+        
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: BACKEND_PORT
+        
+        # MongoDB connection string
+        - name: MONGO_URI
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: MONGO_URI
+        
+        # Resource limits (CPU and memory)
+        resources:
+          # requests: Guaranteed resources
+          # - Kubernetes reserves this much
+          # - Pod won't start if not available
+          
+          requests:
+            cpu: "100m"      # 0.1 CPU core (100 millicores)
+            memory: "256Mi"  # 256 megabytes
+          
+          # limits: Maximum allowed
+          # - Pod killed if exceeds limit
+          # - Prevents one pod from hogging resources
+          
+          limits:
+            cpu: "500m"      # 0.5 CPU core
+            memory: "512Mi"  # 512 megabytes
+        
+        # Liveness probe: Is the app running?
+        # - If fails, K8s restarts the pod
+        # - Checks /health endpoint
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30  # Wait 30s before first check
+          periodSeconds: 10       # Check every 10s
+          timeoutSeconds: 5
+          failureThreshold: 3      # Restart after 3 failures
+        
+        # Readiness probe: Is the app ready?
+        # - If fails, remove from load balancer
+        # - Only forward traffic if ready
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+
+# ==============================================
+# LIFECYCLE HOOKS:
+# ==============================================
+# These are lifecycle hooks you can add:
+#
+# startupProbe: Check if app started (before liveness)
+# postStart: Script to run after container starts
+# preStop: Script to run before container stops
+#   - Useful for graceful shutdown
+
+# ==============================================
+# REPLICAS vs SCALING:
+# ==============================================
+# replicas: 2 = Always run 2 pods
+# - If one dies, K8s creates a new one
+# - Load balance between them
+#
+# Manual scaling:
+#   kubectl scale deployment backend-deployment --replicas=5
+#
+# Auto scaling (HPA):
+#   kubectl autoscale deployment backend-deployment --cpu-percent=80 --min=2 --max=10
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. Multiple replicas = high availability
+# 2. Resources limit CPU/memory usage
+# 3. Probes ensure pods are healthy
+# 4. Liveness = is it alive? Readiness = can it serve traffic?
+# 5. Deployment keeps desired # of replicas running
+

@@ -1,0 +1,95 @@
+# ==============================================
+# KUBERNETES LEARNING: FRONTEND SERVICE
+# File: frontend-service.yaml
+# ==============================================
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: frontend-service
+  namespace: travelmemory
+  labels:
+    app: travelmemory
+    component: frontend
+
+spec:
+  # NodePort: Exposes on every node
+  # - Access via <node-ip>:<node-port>
+  # - Node port range: 30000-32767
+  # - Internal port 3000, external node port random
+  type: NodePort
+  
+  selector:
+    app: travelmemory
+    component: frontend
+  
+  ports:
+  - name: http
+    port: 3000        # Service port (internal)
+    targetPort: 3000  # Pod port
+    nodePort: 30001   # External port (optional, random if omitted)
+    protocol: TCP
+
+# ==============================================
+# SERVICE TYPES COMPARISON:
+# ==============================================
+# ClusterIP:
+#   - Only cluster internal
+#   - Used by: MongoDB, Backend
+#
+# NodePort:
+#   - Exposed on <node-ip>:<nodePort>
+#   - Used by: Frontend (this file)
+#   - Access: http://any-node-ip:30001
+#
+# LoadBalancer:
+#   - Cloud provider gives external IP
+#   - Used by: Production frontend
+#   - Access: http://external-ip:port
+
+# ==============================================
+# HOW TO ACCESS:
+# ==============================================
+# If type: NodePort:
+#   1. Get node IP: kubectl get nodes -o wide
+#   2. Access: http://<node-ip>:30001
+#
+# If type: LoadBalancer:
+#   1. Get external IP: kubectl get svc frontend-service
+#   2. Access: http://<external-ip>:3000
+#
+# If using Ingress:
+#   1. Define domain in Ingress
+#   2. Access: http://your-domain.com
+
+# ==============================================
+# PRODUCTION: Use Ingress Instead
+# ==============================================
+# For production, prefer Ingress over NodePort:
+#
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: frontend-ingress
+# spec:
+#   rules:
+#   - host: travelmemory.com
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: frontend-service
+#             port:
+#               number: 3000
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. NodePort exposes service externally
+# 2. Frontend needs external access
+# 3. Production should use Ingress or LoadBalancer
+# 4. Backend stays internal (ClusterIP)
+

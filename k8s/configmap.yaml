@@ -1,0 +1,84 @@
+# ==============================================
+# KUBERNETES LEARNING: CONFIGMAP
+# File: 03-configmap.yaml
+# ==============================================
+
+# WHAT IS A CONFIGMAP?
+# - Stores non-sensitive configuration data
+# - Environment variables, config files, URLs
+# - Can be mounted as files or injected as env vars
+# - Replace hardcoded values in your Docker images
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: app-config
+  namespace: travelmemory
+  labels:
+    app: travelmemory
+    component: configuration
+
+# data: Plain text key-value pairs
+# - Similar to Secrets but not encoded
+# - Good for config files, URLs, feature flags
+
+data:
+  # Backend configuration
+  NODE_ENV: "production"
+  BACKEND_PORT: "3000"
+  
+  # MongoDB connection string
+  # Using the service name "mongodb" for internal DNS
+  MONGO_URI: "mongodb://admin:password123@mongodb-service:27017/travelmemory?authSource=admin"
+  
+  # Frontend configuration
+  REACT_APP_API_URL: "http://localhost:30003"
+  
+  # Prometheus metrics
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "3000"
+
+# ==============================================
+# DOCKER COMPOSE vs KUBERNETES:
+# ==============================================
+# Docker Compose uses:
+#   MONGO_URI: mongodb://admin:password123@mongodb:27017/...
+#
+# Kubernetes uses:
+#   MONGO_URI: mongodb://admin:password123@mongodb-service:27017/...
+#
+# Why? Because Kubernetes uses Services for networking!
+# "mongodb-service" is the internal DNS name we'll create
+
+# ==============================================
+# HOW TO USE THIS CONFIGMAP:
+# ==============================================
+# In Deployments, reference like this:
+#
+# env:
+# - name: MONGO_URI
+#   valueFrom:
+#     configMapKeyRef:
+#       name: app-config
+#       key: MONGO_URI
+#
+# Or mount the entire configmap as files:
+#
+# volumeMounts:
+# - name: app-config
+#   mountPath: /etc/config
+# volumes:
+# - name: app-config
+#   configMap:
+#     name: app-config
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. ConfigMaps store non-sensitive config
+# 2. Can be injected as env vars or mounted as files
+# 3. Changes to ConfigMap require pod restart (depends on how mounted)
+# 4. Keeps configuration separate from container images
+# 5. Use Service names for internal networking
+

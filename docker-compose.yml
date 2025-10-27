@@ -1,0 +1,61 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: travelmemory-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password123}
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-travelmemory}
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - travelmemory-network
+
+  # Backend API (Node.js/Express)
+  backend:
+    build: ./backend
+    container_name: travelmemory-backend
+    restart: unless-stopped
+    ports:
+      - "3003:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${BACKEND_PORT:-3000}
+      - MONGO_URI=${MONGO_URI:-mongodb://admin:password123@mongodb:27017/travelmemory?authSource=admin}
+    depends_on:
+      - mongodb
+    networks:
+      - travelmemory-network
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Frontend (React)
+  frontend:
+    build: ./frontend
+    container_name: travelmemory-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3003}
+    depends_on:
+      - backend
+    networks:
+      - travelmemory-network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+ 
+
+volumes:
+  mongodb_data:
+
+networks:
+  travelmemory-network:
+    driver: bridge

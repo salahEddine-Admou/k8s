@@ -1,0 +1,102 @@
+# ==============================================
+# KUBERNETES LEARNING: SERVICE
+# File: 06-mongodb-service.yaml
+# ==============================================
+
+# WHAT IS A SERVICE?
+# - Provides stable network endpoint for pods
+# - Pods can die, restart, get new IPs
+# - Service has fixed IP that doesn't change
+# - Load balances across multiple pods
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: mongodb-service
+  namespace: travelmemory
+  labels:
+    app: travelmemory
+    component: database
+
+# spec: Defines how to route traffic
+spec:
+  # type: How to expose the service
+  # - ClusterIP: Internal only (default)
+  # - NodePort: External access via node IP
+  # - LoadBalancer: External load balancer
+  # - ExternalName: DNS alias
+  
+  type: ClusterIP  # Only accessible within cluster
+  
+  # selector: Which pods to route traffic to
+  # - Must match pod labels
+  # - Service finds matching pods and load balances
+  
+  selector:
+    app: travelmemory
+    component: database
+  
+  # ports: Port mappings
+  ports:
+  - port: 27017        # Service port (what others connect to)
+    targetPort: 27017  # Pod port (where MongoDB listens)
+    protocol: TCP
+    name: mongodb
+
+# ==============================================
+# SERVICE DISCOVERY:
+# ==============================================
+# Kubernetes provides DNS for services:
+# - mongodb-service.travelmemory.svc.cluster.local
+# - Or just: mongodb-service
+#
+# Backend can connect using:
+# mongodb://admin:password@mongodb-service:27017/db
+
+# ==============================================
+# SERVICE TYPES:
+# ==============================================
+# ClusterIP (Internal):
+#   - Only accessible from within cluster
+#   - Good for: database, internal APIs
+#   - Our MongoDB uses this
+#
+# NodePort (External):
+#   - Exposes service on every node's IP
+#   - Access via <node-ip>:<node-port>
+#   - Good for: exposing services internally
+#
+# LoadBalancer (External):
+#   - Gets external IP from cloud provider
+#   - Good for: internet-facing apps
+#   - Our frontend might use this
+#
+# ExternalName:
+#   - Maps to external DNS name
+#   - Good for: external databases, APIs
+
+# ==============================================
+# DOCKER COMPOSE vs KUBERNETES:
+# ==============================================
+# Docker Compose:
+#   services:
+#     mongodb:
+#       image: mongo:7.0
+#       ports:
+#         - "27017:27017"  # Host:Container
+#
+# Kubernetes:
+#   - ClusterIP: No host port exposed
+#   - Service handles internal networking
+#   - Multiple pods can share same service
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. Service provides stable IP for pods
+# 2. Selector connects service to pods
+# 3. ClusterIP = internal, NodePort = external
+# 4. Service name is DNS name in cluster
+# 5. Load balances across matching pods
+

@@ -1,0 +1,125 @@
+# ==============================================
+# KUBERNETES LEARNING: DEPLOYMENT
+# File: 05-mongodb-deployment.yaml
+# ==============================================
+
+# WHAT IS A DEPLOYMENT?
+# - Manages pods and replicas
+# - Handles rollouts, rollbacks, updates
+# - Self-healing: restarts failed containers
+# - Scaling: run more or fewer pods
+
+apiVersion: apps/v1  # Deployment is in apps API group
+kind: Deployment
+
+metadata:
+  name: mongodb-deployment
+  namespace: travelmemory
+  labels:
+    app: travelmemory
+    component: database
+
+# spec: Describes desired state
+spec:
+  # replicas: How many pod copies to run
+  # - 1 = single MongoDB instance (good for dev)
+  # - 3+ = MongoDB replica set (for production)
+  
+  replicas: 1
+  
+  # selector: Which pods belong to this deployment
+  # - Must match pod labels (template.metadata.labels)
+  # - Kubernetes uses this to manage pods
+  
+  selector:
+    matchLabels:
+      app: travelmemory
+      component: database
+  
+  # template: Pod template (like a cookie cutter)
+  # - Kubernetes creates pods from this template
+  # - Every pod will have these labels
+  
+  template:
+    metadata:
+      labels:
+        app: travelmemory
+        component: database
+    
+    # spec: Pod specification (what to run)
+    spec:
+      # containers: List of containers in this pod
+      containers:
+      - name: mongodb
+        # image: Docker image to use
+        image: mongo:7.0
+        imagePullPolicy: IfNotPresent  # Use local if exists
+        
+        # ports: Ports container listens on
+        ports:
+        - containerPort: 27017
+          name: mongodb
+          protocol: TCP
+        
+        # env: Environment variables for the container
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: username
+        
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: password
+        
+        - name: MONGO_INITDB_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: database
+        
+        # volumeMounts: Mount storage into container
+        volumeMounts:
+        - name: mongodb-data
+          mountPath: /data/db  # MongoDB's data directory
+      
+      # volumes: Define storage for the pod
+      volumes:
+      - name: mongodb-data
+        persistentVolumeClaim:
+          claimName: mongodb-pvc  # References our PVC
+
+# ==============================================
+# DEPLOYMENT vs POD:
+# ==============================================
+# Pod = A running container (or group of containers)
+# Deployment = Manages pods (creates, kills, restarts)
+#
+# You don't usually create Pods directly!
+# Deployments create and manage Pods for you.
+
+# ==============================================
+# ROLLING UPDATES:
+# ==============================================
+# When you update image tag:
+# 1. K8s creates new pods with new image
+# 2. Waits for them to be healthy
+# 3. Kills old pods
+# 4. Zero downtime!
+#
+# If new pods fail:
+# - Automatic rollback
+# - Old pods still running
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. Deployment manages pod lifecycle
+# 2. Self-healing: restarts failed containers
+# 3. Secrets injected as environment variables
+# 4. PVC mounted as volume for persistence
+# 5. Labels and selectors connect resources
+

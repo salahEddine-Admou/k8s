@@ -1,0 +1,99 @@
+# ==============================================
+# KUBERNETES LEARNING: PERSISTENT VOLUME CLAIM
+# File: 04-mongodb-pvc.yaml
+# ==============================================
+
+# WHAT IS A PERSISTENTVOLUMECLAIM (PVC)?
+# - Requests storage from the cluster
+# - Data persists even if pod dies
+# - Like asking: "I need 10GB of storage"
+# - Kubernetes finds or creates storage (PV) and binds them
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+
+metadata:
+  name: mongodb-pvc
+  namespace: travelmemory
+  labels:
+    app: travelmemory
+    component: database
+    storage: persistent
+
+# spec: Defines what kind of storage we need
+spec:
+  # accessModes: How the storage can be accessed
+  # - ReadWriteOnce: One node can read/write (most common)
+  # - ReadOnlyMany: Multiple nodes can read
+  # - ReadWriteMany: Multiple nodes can read/write (NFS)
+  
+  accessModes:
+    - ReadWriteOnce
+  
+  # storageClassName: Type of storage
+  # - "" = default storage class
+  # - Can be: ssd, hdd, fast, slow, etc.
+  # - Your cluster admin defines storage classes
+  
+  storageClassName: "hostpath"  # Use hostpath for Docker Desktop
+  
+  # resources.requests: Minimum storage needed
+  # - Kubernetes will find or create storage
+  # - If "standard" storage = 5Gi, it might create a 5Gi volume
+  # - Or use "local" storage if available
+  
+  resources:
+    requests:
+      storage: 5Gi  # 5 Gigabytes for MongoDB data
+
+# ==============================================
+# PERSISTENT VOLUME vs PVC:
+# ==============================================
+#
+# PersistentVolume (PV) = The actual storage device
+# - Created by admin or dynamically by StorageClass
+# - Examples: AWS EBS, GCP Persistent Disk, local SSD
+#
+# PersistentVolumeClaim (PVC) = Your request for storage
+# - You create this (what we're doing)
+# - Kubernetes finds matching PV and binds them
+#
+# Think: PV = physical hard drive, PVC = asking for one
+
+# ==============================================
+# HOW TO USE THIS PVC:
+# ==============================================
+# In Deployment, mount like this:
+#
+# volumeMounts:
+# - name: mongodb-data
+#   mountPath: /data/db
+# volumes:
+# - name: mongodb-data
+#   persistentVolumeClaim:
+#     claimName: mongodb-pvc
+#
+# This ensures MongoDB data survives pod restarts!
+
+# ==============================================
+# DOCKER COMPOSE vs KUBERNETES STORAGE:
+# ==============================================
+# Docker Compose:
+#   volumes:
+#     - mongodb_data:/data/db  # Named volume
+#
+# Kubernetes:
+#   volumes:
+#     - name: mongodb-data
+#       persistentVolumeClaim:
+#         claimName: mongodb-pvc
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. PVC requests storage, PV is the actual storage
+# 2. Data persists across pod restarts
+# 3. Must exist before Deployment that uses it
+# 4. StorageClass determines where storage comes from
+# 5. ReadWriteOnce means only one pod can use it
+

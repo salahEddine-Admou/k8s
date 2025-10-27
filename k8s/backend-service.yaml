@@ -1,0 +1,47 @@
+# ==============================================
+# KUBERNETES LEARNING: BACKEND SERVICE
+# File: 08-backend-service.yaml
+# ==============================================
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: backend-service
+  namespace: travelmemory
+  labels:
+    app: travelmemory
+    component: backend
+
+spec:
+  type: NodePort  # Expose externally
+  
+  selector:
+    app: travelmemory
+    component: backend
+  
+  ports:
+  - name: http
+    port: 3000        # Service port
+    targetPort: 3000  # Pod port
+    nodePort: 30003   # External port
+    protocol: TCP
+
+# ==============================================
+# HOW FRONTEND WILL CONNECT:
+# ==============================================
+# Frontend connects to: http://backend-service:3000
+#
+# Kubernetes DNS resolves:
+# - backend-service -> ClusterIP
+# - Load balances across 2 backend pods
+# - Health checks only send to ready pods
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. Backend not exposed externally (ClusterIP)
+# 2. Only frontend can reach it
+# 3. Multiple replicas load balanced
+# 4. Health probes filter unhealthy pods
+

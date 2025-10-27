@@ -1,0 +1,48 @@
+# ==============================================
+# KUBERNETES LEARNING: NAMESPACE
+# File: 01-namespace.yaml
+# ==============================================
+
+# WHAT IS A NAMESPACE?
+# - Think of it as a "folder" in Kubernetes
+# - Isolates resources from each other
+# - Default namespaces: default, kube-system, kube-public
+# - We create our own "travelmemory" namespace
+
+# apiVersion: Which Kubernetes API version to use
+# - v1 = core resources (Namespace, Pod, Service)
+# - apps/v1 = apps resources (Deployment, StatefulSet, ReplicaSet)
+
+apiVersion: v1
+
+# kind: The type of Kubernetes resource
+# - Common kinds: Pod, Service, Deployment, ConfigMap, Secret, Namespace
+
+kind: Namespace
+
+# metadata: Information about the resource
+# - name: unique identifier
+# - labels: key-value pairs for organizing resources
+
+metadata:
+  # Name of our namespace - all resources will live here
+  name: travelmemory
+  
+  # Labels help organize and query resources
+  labels:
+    app: travelmemory
+    team: devops
+    environment: production
+
+# spec: Only needed for some resources
+# - Not required for Namespace (it's just a container)
+# - We'll see spec in other resources like Deployments
+
+# ==============================================
+# KEY LEARNING POINTS:
+# ==============================================
+# 1. Namespace provides logical isolation
+# 2. Helps organize resources by project/team
+# 3. Resources in different namespaces can have same names
+# 4. You can limit CPU/memory per namespace with ResourceQuotas
+
