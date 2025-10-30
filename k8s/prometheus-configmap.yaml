@@ -44,7 +44,7 @@ data:
             regex: node-exporter-service
           - source_labels: [__meta_kubernetes_endpoint_address_target_name]
             action: keep
-            regex: node-exporter
+            regex: node-exporter.*
 
       # Kubernetes pods with prometheus.io/scrape annotation
       - job_name: 'kubernetes-pods'
@@ -75,8 +75,8 @@ data:
             action: replace
             target_label: kubernetes_pod_name
 
-      # Kubernetes pods (endpoints)
-      - job_name: 'kubernetes-pods-endpoints'
+      # Kubernetes endpoints (selective)
+      - job_name: 'kubernetes-endpoints'
         kubernetes_sd_configs:
           - role: endpoints
             namespaces:
@@ -85,10 +85,7 @@ data:
         relabel_configs:
           - source_labels: [__meta_kubernetes_endpoints_name]
             action: keep
-            regex: .*-service
-          - source_labels: [__meta_kubernetes_endpoint_address_target_name]
-            regex: node-exporter
-            action: drop
+            regex: backend-service
           - action: labelmap
             regex: __meta_kubernetes_service_label_(.+)
           - source_labels: [__meta_kubernetes_namespace]
@@ -120,24 +117,4 @@ data:
             target_label: __address__
             replacement: backend-service:3000
 
-      # Frontend application
-      - job_name: 'frontend'
-        kubernetes_sd_configs:
-          - role: endpoints
-            namespaces:
-              names:
-                - travelmemory
-        relabel_configs:
-          - source_labels: [__meta_kubernetes_service_name]
-            action: keep
-            regex: frontend-service
-          - source_labels: [__meta_kubernetes_namespace]
-            action: replace
-            target_label: kubernetes_namespace
-          - source_labels: [__meta_kubernetes_service_name]
-            action: replace
-            target_label: kubernetes_service_name
-          - source_labels: [__address__]
-            action: replace
-            target_label: __address__
-            replacement: frontend-service:3000
+      # (frontend scraping removed - no /metrics)
