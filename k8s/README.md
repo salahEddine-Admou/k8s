@@ -815,8 +815,7 @@ curl -X POST http://localhost:30090/-/reload
 **Configuring Notifications:**
 Edit `alertmanager-configmap.yaml` and uncomment:
 - Email notifications (SMTP)
-- Slack webhooks
-- PagerDuty
+- Webhooks
 - Custom webhooks
 
 Then restart AlertManager:

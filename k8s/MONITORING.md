@@ -23,7 +23,7 @@ Complete guide for deploying Prometheus, Grafana, AlertManager, Node Exporter, L
 │                    │                                           │
 │                    ▼                                           │
 │         ┌──────────────────┐                                  │
-│         │  Email/Slack/... │                                  │
+│         │  Email/Webhooks  │                                  │
 │         └──────────────────┘                                  │
 │                                                                 │
 │  ┌──────────────┐         ┌──────────────┐                      │
@@ -296,16 +296,14 @@ receivers:
         send_resolved: true
 ```
 
-#### Slack Notifications
+#### Webhook Notifications
 
 ```yaml
 receivers:
-  - name: 'slack-alerts'
-    slack_configs:
-      - api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
-        channel: '#alerts'
-        title: '{{ .GroupLabels.alertname }}'
-        text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+  - name: 'webhook-alerts'
+    webhook_configs:
+      - url: 'http://your-webhook-service.com/alerts'
+        send_resolved: true
 ```
 
 Then restart AlertManager:
